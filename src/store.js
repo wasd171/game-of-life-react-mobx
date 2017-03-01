@@ -7,6 +7,9 @@ class Store {
 	disposer;
 	@observable gameIsRunning = false;
 	@observable cells = new Map();
+	possiblyChangedCells = new Set();
+	possiblyChangedCellsNextTick = new Set();
+	keyRegex = /^(.*)_(.*)$/;
 
 	@observable intervals = [50, 100, 250, 500, 1000];
 	@observable interval = this.intervals[2];
@@ -77,7 +80,7 @@ class Store {
 				const normX = this.normalizeCoor(x + dx);
 				const normY = this.normalizeCoor(y + dy);
 				const key = this.getCellKey(normX, normY);
-				neighbours.push(this.cells.get(key));
+				neighbours.push({status: this.cells.get(key), key});
 				if (dx === 0 && dy === 0) {
 					cellKey = key;
 					cell = this.cells.get(key);
@@ -88,25 +91,47 @@ class Store {
 		return {neighbours, cell, key: cellKey};
 	};
 
+
 	filterChanged = (arr, x, y) => {
 		const {neighbours, cell, key} = this.getNeighbours(x, y);
 		const status = cell === ALIVE;
-		const aliveNeighbours = neighbours.filter(neighbour => neighbour === ALIVE).length;
+		const aliveNeighbours = neighbours.filter(neighbour => neighbour.status === ALIVE).length;
 		if (!status) {
 			if (aliveNeighbours === 3) {
+				neighbours.forEach(neighbour => this.possiblyChangedCellsNextTick.add(neighbour.key));
 				arr.push(key)
 			}
 		} else {
 			if (!(aliveNeighbours === 4 || aliveNeighbours === 3)) {
+				neighbours.forEach(neighbour => this.possiblyChangedCellsNextTick.add(neighbour.key));
 				arr.push(key)
 			}
 		}
 	};
 
+	prepareForInitialTick = (x, y) => {
+		const key = this.getCellKey(x, y);
+		const cell = this.cells.get(key);
+		if (cell === ALIVE) {
+			const {neighbours} = this.getNeighbours(x, y);
+			neighbours.forEach(neighbour => this.possiblyChangedCells.add(neighbour.key));
+		}
+	};
+
 	@action.bound recalculateCells() {
+		if (this.possiblyChangedCells.size === 0) {
+			this.iterateCells(this.prepareForInitialTick)
+		}
 		const changedCells = [];
-		this.iterateCells(this.filterChanged.bind(this, changedCells));
+
+		for (let key of this.possiblyChangedCells) {
+			const [, xStr, yStr] = this.keyRegex.exec(key);
+			const [x, y] = [xStr, yStr].map(num => parseInt(num, 10));
+			this.filterChanged(changedCells, x, y);
+		}
 		changedCells.forEach(this.toggleCell);
+		this.possiblyChangedCells = this.possiblyChangedCellsNextTick;
+		this.possiblyChangedCellsNextTick.clear();
 	}
 
 	@action.bound startGame() {
@@ -120,6 +145,8 @@ class Store {
 	@action.bound stopGame() {
 		this.disposer();
 		this.disposer = null;
+		this.possiblyChangedCells.clear();
+		this.possiblyChangedCellsNextTick.clear();
 		this.gameIsRunning = false;
 	}
 
