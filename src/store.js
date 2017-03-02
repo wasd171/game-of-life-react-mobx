@@ -7,15 +7,15 @@ class Store {
 	disposer;
 	@observable gameIsRunning = false;
 	@observable cells = new Map();
+	neighbours = new Map();
 	possiblyChangedCells = new Set();
 	possiblyChangedCellsNextTick = new Set();
-	keyRegex = /^(.*)_(.*)$/;
 
 	@observable intervals = [50, 100, 250, 500, 1000];
 	@observable interval = this.intervals[2];
 
 	@observable sizes = [15, 30, 60, 100];
-	@observable size = this.sizes[0];
+	@observable size = this.sizes[1];
 
 	@computed get range() {
 		return [...new Array(this.size).keys()];
@@ -34,8 +34,11 @@ class Store {
 	}
 
 	@action.bound setSize(index) {
-		this.size = this.sizes[index];
-		this.resetCells();
+		if (this.size !== this.sizes[index]) {
+			this.size = this.sizes[index];
+			this.resetCells();
+			this.setNeighbours();
+		}
 	}
 
 	getCellKey(x, y) {
@@ -91,19 +94,39 @@ class Store {
 		return {neighbours, cell, key: cellKey};
 	};
 
+	computeNeighbour = (x, y) => {
+		const {neighbours, key} = this.getNeighbours(x, y);
+		this.neighbours.set(key, neighbours.map(neighbour => neighbour.key));
+	};
 
-	filterChanged = (arr, x, y) => {
-		const {neighbours, cell, key} = this.getNeighbours(x, y);
-		const status = cell === ALIVE;
-		const aliveNeighbours = neighbours.filter(neighbour => neighbour.status === ALIVE).length;
+	setNeighbours = () => {
+		this.neighbours.clear();
+		this.iterateCells(this.computeNeighbour);
+	};
+
+
+	filterChanged = (arr, key) => {
+		const neighbours = this.neighbours.get(key);
+		const status = this.cells.get(key) === ALIVE;
+		const aliveNeighbours = neighbours.reduce((previousValue, currentValue) => {
+			const cell = this.cells.get(currentValue);
+			if (cell === ALIVE) {
+				return previousValue + 1
+			} else {
+				return previousValue
+			}
+		}, 0);
+		// const {neighbours, cell, key} = this.getNeighbours(x, y);
+		// const status = cell === ALIVE;
+		// const aliveNeighbours = neighbours.filter(neighbour => neighbour.status === ALIVE).length;
 		if (!status) {
 			if (aliveNeighbours === 3) {
-				neighbours.forEach(neighbour => this.possiblyChangedCellsNextTick.add(neighbour.key));
+				neighbours.forEach(neighbour => this.possiblyChangedCellsNextTick.add(neighbour));
 				arr.push(key)
 			}
 		} else {
 			if (!(aliveNeighbours === 4 || aliveNeighbours === 3)) {
-				neighbours.forEach(neighbour => this.possiblyChangedCellsNextTick.add(neighbour.key));
+				neighbours.forEach(neighbour => this.possiblyChangedCellsNextTick.add(neighbour));
 				arr.push(key)
 			}
 		}
@@ -113,8 +136,8 @@ class Store {
 		const key = this.getCellKey(x, y);
 		const cell = this.cells.get(key);
 		if (cell === ALIVE) {
-			const {neighbours} = this.getNeighbours(x, y);
-			neighbours.forEach(neighbour => this.possiblyChangedCells.add(neighbour.key));
+			const neighbours = this.neighbours.get(key);
+			neighbours.forEach(neighbour => this.possiblyChangedCells.add(neighbour));
 		}
 	};
 
@@ -125,13 +148,12 @@ class Store {
 		const changedCells = [];
 
 		for (let key of this.possiblyChangedCells) {
-			const [, xStr, yStr] = this.keyRegex.exec(key);
-			const [x, y] = [xStr, yStr].map(num => parseInt(num, 10));
-			this.filterChanged(changedCells, x, y);
+			this.filterChanged(changedCells, key);
 		}
 		changedCells.forEach(this.toggleCell);
+
 		this.possiblyChangedCells = this.possiblyChangedCellsNextTick;
-		this.possiblyChangedCellsNextTick.clear();
+		this.possiblyChangedCellsNextTick = new Set();
 	}
 
 	@action.bound startGame() {
@@ -152,6 +174,7 @@ class Store {
 
 	constructor() {
 		this.resetCells();
+		this.setNeighbours();
 	}
 }
 
