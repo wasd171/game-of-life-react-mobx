@@ -55,19 +55,6 @@ class Cell extends Component {
 			/>
 		)
 	}
-	// render() {
-	// 	const status = this.props.store.cells.get(this.props.cellKey);
-	//
-	// 	return (
-	// 		<BasicCell
-	// 			size={this.props.size}
-	// 			x={this.props.x}
-	// 			y={this.props.y}
-	// 			status={status}
-	// 			onClick={this.handleClick}
-	// 		/>
-	// 	)
-	// }
 }
 
 export default Cell;

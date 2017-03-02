@@ -1,6 +1,11 @@
 import React, {Component} from 'react'
-import {CardActions, SelectField, MenuItem, RaisedButton} from 'material-ui'
-import {AvPlayCircleOutline, AvPauseCircleOutline, NavigationCancel} from 'material-ui/svg-icons'
+import CardActions from 'material-ui/Card/CardActions'
+import SelectField from 'material-ui/SelectField'
+import MenuItem from 'material-ui/MenuItem'
+import RaisedButton from 'material-ui/RaisedButton'
+import AvPlayCircleOutline from 'material-ui/svg-icons/av/play-circle-outline'
+import AvPauseCircleOutline from 'material-ui/svg-icons/av/pause-circle-outline'
+import NavigationCancel from 'material-ui/svg-icons/navigation/cancel'
 import {inject, observer} from 'mobx-react'
 
 

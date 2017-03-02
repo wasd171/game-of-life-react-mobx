@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
-import {AppBar, Card} from 'material-ui'
+import AppBar from 'material-ui/AppBar'
+import Card from 'material-ui/Card'
 import styled from 'styled-components'
 import Field from './Field'
 import Controls from './Controls'
