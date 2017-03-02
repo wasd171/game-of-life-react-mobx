@@ -3200,6 +3200,10 @@ klaw@^1.0.0:
   optionalDependencies:
     graceful-fs "^4.1.9"
 
+konva@^1.4.0:
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/konva/-/konva-1.4.0.tgz#4a04e5c84f34f3ad3ab09bc55c9da734b524dc7f"
+
 lazy-cache@^1.0.3:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/lazy-cache/-/lazy-cache-1.0.4.tgz#a1d78fc3a50474cb80845d3b3b6e1da49a446e8e"
@@ -4332,6 +4336,13 @@ react-event-listener@^0.4.0:
     babel-runtime "^6.20.0"
     react-addons-shallow-compare "^15.4.2"
     warning "^3.0.0"
+
+react-konva@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/react-konva/-/react-konva-1.1.1.tgz#93d972a6243a3b4126a42f51bf72457dec43436c"
+  dependencies:
+    fbjs "^0.8.6"
+    object-assign "^4.1.0"
 
 react-tap-event-plugin@^2.0.1:
   version "2.0.1"

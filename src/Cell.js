@@ -1,50 +1,73 @@
 import React, {Component} from 'react'
-import {inject, observer} from 'mobx-react'
-import styled from 'styled-components'
+import {reaction} from 'mobx'
+import {inject} from 'mobx-react'
 import {white, green500} from 'material-ui/styles/colors'
 import {ALIVE} from './constants'
+import {Rect} from 'react-konva'
 
-
-const BasicCell = styled.div`
-	position: relative;
-	width: ${props => 100/props.size}%;
-	cursor: pointer;
-	user-select: none;
-	box-sizing: border-box;
-	&:before {
-		content: "";
-		cursor: pointer;
-		user-select: none;
-		display: block;
-		padding-top: 100%;
-		border-top: 1px solid ${props => props.theme.palette.borderColor};
-		border-left: 1px solid ${props => props.theme.palette.borderColor};
-		${props => props.x === props.size - 1 && `border-right: 1px solid ${props.theme.palette.borderColor};`}
-		${props => props.y === props.size - 1 && `border-bottom: 1px solid ${props.theme.palette.borderColor};`}
-		background-color: ${props => props.status === ALIVE ? green500 : white};
-	}
-`;
 
 @inject('store')
-@observer
 class Cell extends Component {
-	handleClick = () => {
-		this.props.store.toggleCell(this.props.cellKey);
+	disposer;
+	cell;
+
+	cellRef = (el) => {
+		if (!this.cell) {
+			this.cell = el;
+		}
 	};
 
-	render() {
-		const status = this.props.store.cells.get(this.props.cellKey);
+	handleClick = () => {
+		if (!this.props.store.gameIsRunning) {
+			this.props.store.toggleCell(this.props.cellKey);
+		}
+	};
 
+	componentDidMount() {
+		this.disposer = reaction(
+			() => this.props.store.cells.get(this.props.cellKey),
+			(status) => {
+				if (status === ALIVE) {
+					this.cell.fill(green500);
+				} else {
+					this.cell.fill(white);
+				}
+				this.cell.draw();
+			}
+		)
+	}
+
+	componentWillUnmount() {
+		this.disposer();
+		this.disposer = null;
+	}
+
+	render() {
 		return (
-			<BasicCell
-				size={this.props.size}
-				x={this.props.x}
-				y={this.props.y}
-				status={status}
+			<Rect
+				width={this.props.cellSize}
+				height={this.props.cellSize}
+				x={this.props.x*this.props.cellSize}
+				y={this.props.y*this.props.cellSize}
+				fill={white}
 				onClick={this.handleClick}
+				ref={this.cellRef}
 			/>
 		)
 	}
+	// render() {
+	// 	const status = this.props.store.cells.get(this.props.cellKey);
+	//
+	// 	return (
+	// 		<BasicCell
+	// 			size={this.props.size}
+	// 			x={this.props.x}
+	// 			y={this.props.y}
+	// 			status={status}
+	// 			onClick={this.handleClick}
+	// 		/>
+	// 	)
+	// }
 }
 
 export default Cell;
